@@ -616,6 +616,5 @@ def _get_taper_eigenvalues(tapers, half_bandwidth, time_index):
         2 * half_bandwidth * time_index)
     ideal_filter[0] = 2 * half_bandwidth
     n_time_samples_per_window = len(time_index)
-    return np.dot(
-        _auto_correlation(tapers)[:, :n_time_samples_per_window],
-        ideal_filter)
+    return (_auto_correlation(tapers)[:, :n_time_samples_per_window] @
+            ideal_filter)

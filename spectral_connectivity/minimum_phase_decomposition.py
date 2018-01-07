@@ -41,9 +41,8 @@ def _get_intial_conditions(cross_spectral_matrix):
         random_start = np.random.standard_normal(
             size=new_shape)
 
-        random_start = np.matmul(
-            random_start, _conjugate_transpose(random_start)).mean(
-                axis=-3, keepdims=True)
+        random_start = (random_start @ _conjugate_transpose(random_start)
+                        ).mean(axis=-3, keepdims=True)
 
         return np.linalg.cholesky(random_start)
 
@@ -179,8 +178,8 @@ def minimum_phase_decomposition(cross_spectral_matrix, tolerance=1E-8,
         old_minimum_phase_factor = minimum_phase_factor.copy()
         linear_predictor = _get_linear_predictor(
             minimum_phase_factor, cross_spectral_matrix, I)
-        minimum_phase_factor = np.matmul(
-            minimum_phase_factor, _get_causal_signal(linear_predictor))
+        minimum_phase_factor = (minimum_phase_factor @
+                                _get_causal_signal(linear_predictor))
 
         # If already converged at a time point, don't change.
         minimum_phase_factor[is_converged, ...] = old_minimum_phase_factor[

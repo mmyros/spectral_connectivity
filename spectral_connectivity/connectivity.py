@@ -915,9 +915,8 @@ def _estimate_transfer_function(minimum_phase):
 
     '''
     inverse_fourier_coefficients = ifft(minimum_phase, axis=-3).real
-    return np.matmul(
-        minimum_phase,
-        np.linalg.inv(inverse_fourier_coefficients[..., 0:1, :, :]))
+    return (minimum_phase @
+            np.linalg.inv(inverse_fourier_coefficients[..., 0:1, :, :]))
 
 
 def _estimate_predictive_power(total_power, rotated_covariance,
@@ -938,7 +937,7 @@ def _squared_magnitude(x):
 def _complex_inner_product(a, b):
     '''Measures the orthogonality (similarity) of complex arrays in
     the last two dimensions.'''
-    return np.matmul(a, _conjugate_transpose(b))
+    return a @ _conjugate_transpose(b)
 
 
 def _remove_instantaneous_causality(noise_covariance):
@@ -1033,7 +1032,7 @@ def _normalize_fourier_coefficients(fourier_coefficients):
     '''
     U, _, V_transpose = np.linalg.svd(
         _reshape(fourier_coefficients), full_matrices=False)
-    return np.matmul(U, V_transpose)
+    return U @ V_transpose
 
 
 def _estimate_canonical_coherence(normalized_fourier_coefficients1,
