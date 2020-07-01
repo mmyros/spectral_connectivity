@@ -95,7 +95,10 @@ class Connectivity(object):
     def __init__(self, fourier_coefficients,
                  expectation_type='trials_tapers', frequencies=None,
                  time=None):
-        self.fourier_coefficients = fourier_coefficients.values
+        if type(fourier_coefficients) == np.ndarray:
+            self.fourier_coefficients = fourier_coefficients
+        else: # Must be xarray
+            self.fourier_coefficients = fourier_coefficients.values
         self.expectation_type = expectation_type
         self._frequencies = frequencies
         self.time = time

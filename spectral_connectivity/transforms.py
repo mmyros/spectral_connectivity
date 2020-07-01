@@ -60,8 +60,14 @@ class Multitaper(object):
                  n_time_samples_per_window=None,
                  n_time_samples_per_step=None, is_low_bias=True):
 
-        self.time_series = time_series
-        self.sampling_frequency = sampling_frequency
+
+        if type(time_series) == np.ndarray:
+            self.time_series = time_series
+            self.sampling_frequency = sampling_frequency
+        else:  # Must be xarray input
+            self.time_series = time_series.values
+            self.sampling_frequency = 1/np.diff(time_series['Time']).mean()
+
         self.time_halfbandwidth_product = time_halfbandwidth_product
         self.detrend_type = detrend_type
         self._time_window_duration = time_window_duration
