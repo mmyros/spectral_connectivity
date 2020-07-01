@@ -15,6 +15,16 @@ from spectral_connectivity.connectivity import (Connectivity, _bandpass,
                                    _squared_magnitude, _total_inflow,
                                    _total_outflow)
 
+import xarray as xr
+def fourier_coefficients_to_xarray(fourier_coefficients,n_time_samples=None, n_trials=None, n_tapers=None, n_fft_samples=None, n_signals=None):
+
+    fourier_coefficients = xr.DataArray(data=fourier_coefficients,
+                                        # coords=[range(mea) for mea in
+                                        #        (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals)],
+                                        dims=('time_samples', 'trials', 'tapers', 'fft_samples', 'signals'),
+                                        #name=['fourier_coefficients']
+                                        )
+    return fourier_coefficients
 
 @mark.parametrize('axis', [(0), (1), (2), (3)])
 def test_cross_spectrum(axis):
@@ -32,6 +42,8 @@ def test_cross_spectrum(axis):
     fourier_ind[axis] = slice(1, 2)
     fourier_coefficients[fourier_ind] = signal_fourier_coefficient
 
+
+
     expected_cross_spectral_matrix = np.zeros(
         (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals,
          n_signals), dtype=np.complex)
@@ -46,6 +58,13 @@ def test_cross_spectrum(axis):
     this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
     assert np.allclose(
         expected_cross_spectral_matrix, this_Conn._cross_spectral_matrix)
+
+    fourier_coefficients=fourier_coefficients_to_xarray(fourier_coefficients, n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals)
+    this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
+
+    assert np.allclose(
+        expected_cross_spectral_matrix, this_Conn._cross_spectral_matrix)
+
 
 
 def test_power():
@@ -63,6 +82,10 @@ def test_power():
     expected_power[..., :] = [4, 9]
 
     this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
+    assert np.allclose(
+        expected_power, this_Conn.power())
+
+    this_Conn = Connectivity(fourier_coefficients=fourier_coefficients_to_xarray(fourier_coefficients, n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals))
     assert np.allclose(
         expected_power, this_Conn.power())
 
@@ -134,7 +157,7 @@ def test_imaginary_coherence():
     '''Test that imaginary coherence sets signals with the same phase
     to zero.'''
     n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals = (
-        1, 30, 1, 1, 2)
+        10, 30, 3, 1, 2)
     fourier_coefficients = np.zeros(
         (n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals),
         dtype=np.complex)
@@ -142,8 +165,17 @@ def test_imaginary_coherence():
     fourier_coefficients[..., :] = [2 * np.exp(1j * 0),
                                     3 * np.exp(1j * 0)]
     expected_imaginary_coherence = np.zeros((2, 2))
-
+    # test for numpy input:
     this_Conn = Connectivity(fourier_coefficients=fourier_coefficients)
+    assert np.allclose(
+        this_Conn.imaginary_coherence().squeeze(),
+        expected_imaginary_coherence)
+
+    # Test for xarray input:
+
+    this_Conn = Connectivity(fourier_coefficients=fourier_coefficients_to_xarray(fourier_coefficients,
+                                                                                 n_time_samples, n_trials, n_tapers, n_fft_samples, n_signals))
+
     assert np.allclose(
         this_Conn.imaginary_coherence().squeeze(),
         expected_imaginary_coherence)

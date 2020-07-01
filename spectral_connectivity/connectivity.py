@@ -95,7 +95,7 @@ class Connectivity(object):
     def __init__(self, fourier_coefficients,
                  expectation_type='trials_tapers', frequencies=None,
                  time=None):
-        self.fourier_coefficients = fourier_coefficients
+        self.fourier_coefficients = fourier_coefficients.values
         self.expectation_type = expectation_type
         self._frequencies = frequencies
         self.time = time
@@ -137,7 +137,14 @@ class Connectivity(object):
                                               n_signals, n_signals)
 
         '''
-        fourier_coefficients = self.fourier_coefficients[..., np.newaxis]
+        import xarray as xr
+        if type(self.fourier_coefficients) == xr.DataArray:
+            fourier_coefficients = self.fourier_coefficients.values[..., np.newaxis] #
+            # fourier_coefficients = self.fourier_coefficients.expand_dims('new_axis',axis=-1)
+        else:
+            fourier_coefficients = self.fourier_coefficients[..., np.newaxis] #(20, 3, 4, 3, 2, 1)
+        # (20, 3, 4, 3, 3)
+        # need (20, 3, 4, 3, 2, 2)
         return _complex_inner_product(fourier_coefficients,
                                       fourier_coefficients)
 
@@ -920,7 +927,20 @@ def _squared_magnitude(x):
 def _complex_inner_product(a, b):
     '''Measures the orthogonality (similarity) of complex arrays in
     the last two dimensions.'''
-    return np.matmul(a, _conjugate_transpose(b))
+
+    if type(a)==np.ndarray:
+
+        return np.matmul(a, _conjugate_transpose(b))
+    else:
+        import xarray as xr
+        # dims=('n_time_samples',
+        # 'n_trials',
+        # 'n_tapers',
+        # 'n_fft_samples',
+        # 'n_signals')
+        return \
+            xr.dot(a, _conjugate_transpose(b))
+            # xr.dot(a,b.transpose().conjugate())#,dims=dims)
 
 
 def _remove_instantaneous_causality(noise_covariance):
@@ -1208,7 +1228,23 @@ def _find_significant_frequencies(
                                is_significant, frequency_step,
                                min_group_size)
 
-
 def _conjugate_transpose(x):
     '''Conjugate transpose of the last two dimensions of array x'''
-    return x.swapaxes(-1, -2).conjugate()
+    import xarray as xr
+    if type(x)==np.ndarray:
+        return x.swapaxes(-1, -2).conjugate()
+    else:
+        import xarray as xr
+        x.transpose(..., 'new_axis', 'signals').conjugate()
+        return \
+            x.transpose('time_samples',
+                        'trials',
+                        'tapers',
+                        'fft_samples',
+                        'signals',
+                        'new_axis',
+                        'signals').conjugate()
+        x.transpose(..., 'new_axis', 'signals').conjugate()
+        # ValueError: Ellipsis not found in array dimensions?? Maybe wait for a new xarray release that will fix this
+
+
