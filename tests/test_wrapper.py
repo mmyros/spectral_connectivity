@@ -96,7 +96,44 @@ def test_multitaper_n_signals(n_signals):
             m = multitaper_connectivity(time_series,
                                         method=method,
                                         sampling_frequency=sampling_frequency,
-                                        time_window_duration=time_window_duration
+                                        time_window_duration=time_window_duration,
+                                        squeeze=False
+                                        )
+            assert np.allclose(m.Time.values, expected_time)
+            assert not (m.values == 0).all()
+            assert not (np.isnan(m.values)).all()
+            print(method)
+        except NotImplementedError:
+            pass
+
+
+@mark.parametrize('n_signals', range(2, 5))
+def test_multitaper_n_signals_squeeze(n_signals):
+    """
+    Test dataarray interface squeeze option
+    """
+    time_window_duration = .1
+    sampling_frequency = 1500
+    start_time, end_time = 0, 4.8
+    n_trials, n_signals = 10, n_signals
+    n_time_samples = int((end_time - start_time) * sampling_frequency) + 1
+    # time_series = np.zeros((n_time_samples, n_trials, n_signals))
+    time_series = np.random.random(size=(n_time_samples, n_trials, n_signals))
+    expected_time = np.arange(start_time, end_time, time_window_duration)
+
+    if not np.allclose(expected_time[-1] + time_window_duration, end_time):
+        expected_time = expected_time[:-1]
+    bad_methods = ['delay', 'n_observations', 'frequencies', 'from_multitaper', 'phase_slope_index']
+    methods = [x for x in dir(Connectivity) if not x.startswith('_') and x not in bad_methods]
+
+    # Test squeeze option:
+    for method in methods:
+        try:
+            m = multitaper_connectivity(time_series,
+                                        method=method,
+                                        sampling_frequency=sampling_frequency,
+                                        time_window_duration=time_window_duration,
+                                        squeeze=True
                                         )
             assert np.allclose(m.Time.values, expected_time)
             assert not (m.values == 0).all()
@@ -104,6 +141,7 @@ def test_multitaper_n_signals(n_signals):
 
         except NotImplementedError:
             pass
+
 
 @mark.parametrize('n_signals', range(2, 5))
 def test_multitaper_connectivities_n_signals(n_signals):
@@ -132,7 +170,7 @@ def test_multitaper_connectivities_n_signals(n_signals):
                                    sampling_frequency=sampling_frequency,
                                    time_window_duration=time_window_duration
                                    )
-    mea ='coherence_magnitude'
+    mea = 'coherence_magnitude'
     assert np.allclose(cons[mea].Time.values, expected_time)
     assert not (cons[mea].values == 0).all()
     assert not (np.isnan(cons[mea].values)).all()
@@ -146,14 +184,15 @@ def test_frequencies():
     sampling_frequency = 1000
 
     cons = multitaper_connectivity(time_series,
-                                sampling_frequency=sampling_frequency,
-                                time_window_duration=None,
-                                n_fft_samples=n_fft_samples
-                                )
+                                   sampling_frequency=sampling_frequency,
+                                   time_window_duration=None,
+                                   n_fft_samples=n_fft_samples
+                                   )
 
     for mea in cons.data_vars:
-        assert not (cons[mea].values == 0).all()
         assert not (np.isnan(cons[mea].values)).all()
 
         expected_frequencies = np.array([0, 250])
         assert np.allclose(cons[mea].Frequency, expected_frequencies)
+        # if not (mea=='direct_directed_transfer_function'):
+        assert not (cons[mea].values == 0).all()
