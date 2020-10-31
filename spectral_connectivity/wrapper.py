@@ -25,7 +25,13 @@ def connectivity_to_xarray(m, method='coherence_magnitude', signal_names=None,
         Only makes sense for one pair of signals and symmetrical measures
 
     """
-    if (method in ['group_delay', ]) or ('directed' in method):
+    if (method in ['group_delay',
+                   # 'directed_transfer_function',
+                   # 'directed_coherence',
+                   'partial_directed_coherence',
+                   'generalized_partial_directed_coherence',
+                   'direct_directed_transfer_function',
+                   ]):
         raise NotImplementedError(f'{method} is not supported by xarray interface')
     # Name the source and target axes
     if signal_names is None:
