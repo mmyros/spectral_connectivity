@@ -26,8 +26,9 @@ def connectivity_to_xarray(m, method='coherence_magnitude', signal_names=None,
 
     """
     if (method in ['group_delay',
-                   # 'directed_transfer_function',
-                   # 'directed_coherence',
+                   'canonical_coherence',
+                   'directed_transfer_function',
+                   'directed_coherence',
                    'partial_directed_coherence',
                    'generalized_partial_directed_coherence',
                    'direct_directed_transfer_function',
@@ -38,10 +39,7 @@ def connectivity_to_xarray(m, method='coherence_magnitude', signal_names=None,
         signal_names = np.arange(m.time_series.shape[-1])
     connectivity = Connectivity.from_multitaper(m)
     if method == 'canonical_coherence':
-        if 'group_labels' not in kwargs:
-            connectivity_mat, labels = getattr(connectivity, method)(group_labels=signal_names,**kwargs)
-        else:
-            connectivity_mat, labels = getattr(connectivity, method)(**kwargs)
+        connectivity_mat, labels = getattr(connectivity, method)(**kwargs)
     else:
         connectivity_mat = getattr(connectivity, method)(**kwargs)
     # Only one couple (only makes sense for symmetrical metrics)
